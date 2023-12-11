@@ -7,8 +7,6 @@ import { CourseServices } from "./course.service";
 const createCourse = catchAsync(async (req, res) => {
   const result = await CourseServices.createCourseIntoDB(req.body);
 
-  console.log({ controller: result });
-
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,
