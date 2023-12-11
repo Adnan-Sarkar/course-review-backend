@@ -11,4 +11,4 @@ router.post(
   CategoryControllers.createCategory,
 );
 
-export const CourseRoutes = router;
+export const CategoryRoutes = router;
