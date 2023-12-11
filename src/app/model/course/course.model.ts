@@ -84,12 +84,23 @@ const courseSchema = new Schema<TCourse>({
   },
   durationInWeeks: {
     type: Number,
-    required: [true, "Course duration in weeks is required"],
   },
   details: {
     type: detailsSchema,
     required: [true, "Course details is required"],
   },
+});
+
+// create pre middleware to implement duration in weeks
+courseSchema.pre("save", function (next) {
+  const start = new Date(this.startDate).getTime();
+  const end = new Date(this.endDate).getTime();
+
+  const durationWeeks = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 7));
+
+  this.durationInWeeks = durationWeeks;
+
+  next();
 });
 
 // create course model
