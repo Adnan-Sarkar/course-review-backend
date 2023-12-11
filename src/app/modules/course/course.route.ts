@@ -3,12 +3,16 @@ import { CourseController } from "./course.controller";
 import validateRequest from "../../middleware/validateRequest";
 import { CourseValidations } from "./course.validation";
 
-const router = express.Router();
+const courseRouter = express.Router();
+const coursesRouter = express.Router();
 
-router.post(
+courseRouter.post(
   "/",
   validateRequest(CourseValidations.createCourseValidationSchema),
   CourseController.createCourse,
 );
 
-export const CourseRoutes = router;
+coursesRouter.get("/");
+
+export const CourseRoutes = courseRouter;
+export const CoursesRoutes = coursesRouter;
