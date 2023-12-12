@@ -12,6 +12,11 @@ courseRouter.post(
   CourseController.createCourse,
 );
 
+coursesRouter.get(
+  "/:courseId/reviews",
+  CourseController.getCourseByIdWithReviews,
+);
+
 coursesRouter.get("/", CourseController.getAllCourses);
 
 export const CourseRoutes = courseRouter;

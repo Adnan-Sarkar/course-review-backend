@@ -1,3 +1,4 @@
+import Review from "../review/review.model";
 import { TCourse } from "./course.interface";
 import Course from "./course.model";
 
@@ -117,7 +118,23 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
   return result;
 };
 
+// get course by id with reviews
+const getCourseByIdWithReviewsFromDB = async (id: string) => {
+  const result: Record<string, unknown> = {};
+
+  const course = await Course.findById(id).select("-__v");
+  const reviews = await Review.find({
+    courseId: id,
+  }).select({ courseId: 1, rating: 1, review: 1 });
+
+  result.course = course;
+  result.reviews = reviews;
+
+  return result;
+};
+
 export const CourseServices = {
   createCourseIntoDB,
   getAllCoursesFromDB,
+  getCourseByIdWithReviewsFromDB,
 };
