@@ -31,7 +31,7 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
     "startDate",
     "endDate",
     "language",
-    "durationInWeeks",
+    "duration",
   ];
 
   const sortOrder = (query?.sortOrder as string) === "desc" ? "desc" : "asc";
@@ -99,7 +99,7 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
   // apply language, provider, durationInWeeks, level filtering
   const language = query?.language;
   const provider = query?.provider;
-  const durationInWeeks = query?.durationInWeeks;
+  const durationInWeeks = query?.duration;
   const level = query?.level;
 
   if (language) {
@@ -221,6 +221,9 @@ const getBestCourseFromDB = async () => {
     await session.endSession();
   }
 };
+
+// update course
+const updateCourseIntoDB = async (id: string, payload: Partial<TCourse>) => {};
 
 export const CourseServices = {
   createCourseIntoDB,
