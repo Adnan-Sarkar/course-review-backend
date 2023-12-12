@@ -45,8 +45,21 @@ const getCourseByIdWithReviews = catchAsync(async (req, res) => {
   });
 });
 
+// get the best course based on average review
+const getBestCourse = catchAsync(async (_req, res) => {
+  const result = await CourseServices.getBestCourseFromDB();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Best course retrieved successfully",
+    data: result,
+  });
+});
+
 export const CourseController = {
   createCourse,
   getAllCourses,
   getCourseByIdWithReviews,
+  getBestCourse,
 };

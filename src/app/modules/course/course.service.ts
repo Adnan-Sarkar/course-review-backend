@@ -1,6 +1,9 @@
+import httpStatus from "http-status";
+import AppError from "../../error/AppError";
 import Review from "../review/review.model";
 import { TCourse } from "./course.interface";
 import Course from "./course.model";
+import mongoose, { Document } from "mongoose";
 
 // create a course
 const createCourseIntoDB = async (payload: TCourse) => {
@@ -133,8 +136,95 @@ const getCourseByIdWithReviewsFromDB = async (id: string) => {
   return result;
 };
 
+// get the best course based on average review
+const getBestCourseFromDB = async () => {
+  // create and start session
+  const session = await mongoose.startSession();
+
+  try {
+    // start transaction
+    session.startTransaction();
+
+    // get bestCourse review - transaction 1
+    const getBestCourse = await Review.aggregate([
+      // stage 1 - group based on same course
+      {
+        $group: {
+          _id: "$courseId",
+          averageRating: {
+            $avg: "$rating",
+          },
+          reviewCount: {
+            $sum: 1,
+          },
+        },
+      },
+
+      // stage 2 - sort descending order based on averageRating
+      {
+        $sort: {
+          averageRating: -1,
+        },
+      },
+
+      // stage 3 - get the first review that has the highest average rating
+      {
+        $limit: 1,
+      },
+
+      // stage 4
+      {
+        $project: {
+          courseId: 1,
+          averageRating: 1,
+          reviewCount: 1,
+        },
+      },
+    ]).session(session);
+
+    const { _id: bestCourseId, averageRating, reviewCount } = getBestCourse[0];
+
+    if (!bestCourseId) {
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        "No best course found based on rating",
+      );
+    }
+
+    // get the best course - transaction 2
+    const bestCourse: Document<any, any> | null = await Course.findById(
+      bestCourseId,
+    )
+      .select("-__v")
+      .session(session);
+
+    if (bestCourse) {
+      // convert mongoose Document to pure object
+      const result = bestCourse.toObject();
+      result.averageRating = averageRating;
+      result.reviewCount = reviewCount;
+
+      // commit transaction
+      await session.commitTransaction();
+
+      return result;
+    }
+
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      `No course found based on id: ${bestCourseId}`,
+    );
+  } catch (error: any) {
+    await session.abortTransaction();
+    throw new AppError(httpStatus.BAD_REQUEST, error?.message);
+  } finally {
+    await session.endSession();
+  }
+};
+
 export const CourseServices = {
   createCourseIntoDB,
   getAllCoursesFromDB,
   getCourseByIdWithReviewsFromDB,
+  getBestCourseFromDB,
 };
