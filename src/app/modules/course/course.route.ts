@@ -12,7 +12,7 @@ courseRouter.post(
   CourseController.createCourse,
 );
 
-coursesRouter.get("/");
+coursesRouter.get("/", CourseController.getAllCourses);
 
 export const CourseRoutes = courseRouter;
 export const CoursesRoutes = coursesRouter;
