@@ -1,4 +1,4 @@
-export interface TError {
+export interface TErrorResponse {
   success: boolean;
   message: string;
   errorMessage: string;
