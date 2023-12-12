@@ -5,6 +5,7 @@ import { TErrorResponse } from "../interface/error";
 import handleZodError from "../error/handleZodError";
 import handleCastError from "../error/handleCastError";
 import handleDuplicateError from "../error/handleDuplicateError";
+import AppError from "../error/AppError";
 
 const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   // create initial error response object
@@ -26,6 +27,8 @@ const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   } else if (error?.code === 11000) {
     // mongodb duplicate entry error
     errorResponse = handleDuplicateError(error);
+  } else if (error instanceof AppError) {
+    errorResponse = error.generateErrorResponse();
   }
 
   // set the stack message
