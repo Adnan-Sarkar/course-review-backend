@@ -185,7 +185,7 @@ const getCourseByIdWithReviewsFromDB = async (id: string) => {
     return result;
   } catch (error: any) {
     await session.abortTransaction();
-    throw new AppError(httpStatus.BAD_REQUEST, error?.message);
+    throw new AppError(httpStatus.BAD_REQUEST, error?.message, error);
   } finally {
     // end session
     await session.endSession();
@@ -430,7 +430,7 @@ const updateCourseIntoDB = async (id: string, payload: Partial<TCourse>) => {
   } catch (error: any) {
     await session.abortTransaction();
 
-    throw new AppError(httpStatus.BAD_REQUEST, error?.message);
+    throw new AppError(httpStatus.BAD_REQUEST, error?.message, error);
   } finally {
     // end session
     await session.endSession();
