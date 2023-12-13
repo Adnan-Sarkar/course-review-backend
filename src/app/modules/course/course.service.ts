@@ -22,9 +22,9 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
   let courseQuery = Course.find();
 
   // apply pagination
-  let page = Number(query?.page) || 1;
-  let limit = Number(query?.limit) || 10;
-  let skip = (page - 1) * limit;
+  const page = Number(query?.page) || 1;
+  const limit = Number(query?.limit) || 10;
+  const skip = (page - 1) * limit;
 
   courseQuery = courseQuery.skip(skip).limit(limit);
 
