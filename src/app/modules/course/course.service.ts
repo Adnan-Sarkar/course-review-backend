@@ -139,15 +139,53 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
 const getCourseByIdWithReviewsFromDB = async (id: string) => {
   const result: Record<string, unknown> = {};
 
-  const course = await Course.findById(id).select("-__v");
-  const reviews = await Review.find({
-    courseId: id,
-  }).select({ courseId: 1, rating: 1, review: 1 });
+  // start session
+  const session = await mongoose.startSession();
 
-  result.course = course;
-  result.reviews = reviews;
+  try {
+    // start transaction
+    session.startTransaction();
 
-  return result;
+    // find the course - transaction 1
+    const course = await Course.findById(id).select("-__v").session(session);
+
+    // checked whether the course exists or not
+    if (!course) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `No course found with id: ${id}`,
+      );
+    }
+
+    // find the reviews - transaction 2
+    const reviews = await Review.find({
+      courseId: id,
+    })
+      .select({ courseId: 1, rating: 1, review: 1 })
+      .session(session);
+
+    // checked whether the course reviews exists or not
+    if (!reviews) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `No course review found with course id: ${id}`,
+      );
+    }
+
+    result.course = course;
+    result.reviews = reviews;
+
+    // commit transaction
+    await session.commitTransaction();
+
+    return result;
+  } catch (error: any) {
+    await session.abortTransaction();
+    throw new AppError(httpStatus.BAD_REQUEST, error?.message);
+  } finally {
+    // end session
+    await session.endSession();
+  }
 };
 
 // get the best course based on average review
