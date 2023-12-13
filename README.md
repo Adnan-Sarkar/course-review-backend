@@ -17,7 +17,7 @@ To test the live API endpoints, I prefer using [Postman](https://www.postman.com
 ### Live API
 
 ```bash
-
+course-review-backend-by-adnan-sarkar.vercel.app
 ```
 
 for `course`
