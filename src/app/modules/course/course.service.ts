@@ -7,7 +7,11 @@ import mongoose, { Document } from "mongoose";
 
 // create a course
 const createCourseIntoDB = async (payload: TCourse) => {
-  const result = await Course.create(payload);
+  const createdCourse = await Course.create(payload);
+
+  const result = createdCourse.toObject();
+
+  delete result.__v;
 
   return result;
 };
@@ -130,7 +134,7 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
   }
 
   courseQuery = courseQuery.find(filterObj);
-  const result = await courseQuery.exec();
+  const result = await courseQuery.select("-__v").exec();
 
   return result;
 };
