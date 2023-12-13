@@ -63,12 +63,26 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
   const minPrice = query?.minPrice;
   const maxPrice = query?.maxPrice;
 
-  if (minPrice && maxPrice) {
-    courseQuery = courseQuery.find({
-      price: {
+  if (minPrice || maxPrice) {
+    let priceQuery: Record<string, unknown> = {};
+
+    if (minPrice && maxPrice) {
+      priceQuery = {
         $gte: minPrice,
         $lte: maxPrice,
-      },
+      };
+    } else if (minPrice) {
+      priceQuery = {
+        $gte: minPrice,
+      };
+    } else if (maxPrice) {
+      priceQuery = {
+        $lte: maxPrice,
+      };
+    }
+
+    courseQuery = courseQuery.find({
+      price: priceQuery,
     });
   }
 
