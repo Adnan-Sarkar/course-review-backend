@@ -223,11 +223,168 @@ const getBestCourseFromDB = async () => {
 };
 
 // update course
-const updateCourseIntoDB = async (id: string, payload: Partial<TCourse>) => {};
+const updateCourseIntoDB = async (id: string, payload: Partial<TCourse>) => {
+  const {
+    tags,
+    details,
+    startDate,
+    endDate,
+    durationInWeeks,
+    ...remainingData
+  } = payload;
+
+  const modifiedUpdatedData: Record<string, unknown> = { ...remainingData };
+
+  // don't allow update durationInWeeks directly without startDate or endDate change
+  if (durationInWeeks) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Please update startDate or endDate to change durationInWeeks",
+    );
+  }
+
+  // start session
+  const session = await mongoose.startSession();
+
+  try {
+    // start transaction
+    session.startTransaction();
+
+    // if update startDate or endDate then update durationInWeeks field
+    if (startDate || endDate) {
+      // get current startDate and endDate - with transaction
+      const currentInfo = await Course.findById(id).session(session);
+      let durationWeeks = currentInfo?.durationInWeeks;
+
+      if (startDate && endDate) {
+        const start = new Date(startDate).getTime();
+        const end = new Date(endDate).getTime();
+
+        durationWeeks = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 7));
+      } else if (startDate) {
+        const start = new Date(startDate).getTime();
+        const end = new Date(currentInfo?.endDate as string).getTime();
+
+        durationWeeks = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 7));
+      } else if (endDate) {
+        const start = new Date(currentInfo?.startDate as string).getTime();
+        const end = new Date(endDate).getTime();
+
+        durationWeeks = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 7));
+      }
+
+      // update new durationInWeeks field
+      modifiedUpdatedData.durationInWeeks = durationWeeks;
+    }
+
+    // modified non-primitive fields to update for details
+    if (details && Object.keys(details).length) {
+      for (const [key, value] of Object.entries(details)) {
+        modifiedUpdatedData[`details.${key}`] = value;
+      }
+    }
+
+    // update primitive fields and details - with transaction
+    await Course.findByIdAndUpdate(id, modifiedUpdatedData, {
+      new: true,
+      runValidators: true,
+      session,
+    });
+
+    // checked if there are any tags need to update
+    if (tags && tags.length > 0) {
+      // filer out deleted fields
+      const deletedTagsList = tags
+        .filter((tag) => {
+          if (tag.isDeleted === true) {
+            return true;
+          }
+
+          return false;
+        })
+        .map((tag) => tag.name);
+
+      // delete tags if needed - with transaction
+      const deletedTags = await Course.findByIdAndUpdate(
+        id,
+        {
+          $pull: {
+            tags: {
+              name: {
+                $in: deletedTagsList,
+              },
+            },
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+          session,
+        },
+      );
+
+      if (!deletedTags) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          "Removing tags is not successful",
+        );
+      }
+
+      // filter out new tags
+      const newTagsList = tags.filter((tag) => {
+        if (tag.isDeleted === false) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // add new tags - with transaction
+      const updatedTags = await Course.findByIdAndUpdate(
+        id,
+        {
+          $addToSet: {
+            tags: {
+              $each: newTagsList,
+            },
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+          session,
+        },
+      );
+
+      if (!updatedTags) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          "Add new tags is not successful",
+        );
+      }
+    }
+
+    // get all updated data for response - with transaction
+    const result = await Course.findById(id).select("-__v").session(session);
+
+    // commit transaction
+    await session.commitTransaction();
+
+    return result;
+  } catch (error: any) {
+    await session.abortTransaction();
+
+    throw new AppError(httpStatus.BAD_REQUEST, error?.message);
+  } finally {
+    // end session
+    await session.endSession();
+  }
+};
 
 export const CourseServices = {
   createCourseIntoDB,
   getAllCoursesFromDB,
   getCourseByIdWithReviewsFromDB,
   getBestCourseFromDB,
+  updateCourseIntoDB,
 };

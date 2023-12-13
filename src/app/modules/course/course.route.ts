@@ -21,6 +21,12 @@ coursesRouter.get(
   CourseController.getCourseByIdWithReviews,
 );
 
+coursesRouter.put(
+  "/:courseId",
+  validateRequest(CourseValidations.updateCourseValidationSchema),
+  CourseController.updateCourse,
+);
+
 coursesRouter.get("/", CourseController.getAllCourses);
 
 export const CourseRoutes = courseRouter;
