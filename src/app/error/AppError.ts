@@ -2,10 +2,12 @@ import { TErrorResponse } from "../interface/error";
 
 class AppError extends Error {
   public statusCode: number;
+  public errorObject?: Error;
 
-  constructor(statusCode: number, message: string) {
+  constructor(statusCode: number, message: string, errorObject?: Error) {
     super(message);
     this.statusCode = statusCode;
+    this.errorObject = errorObject;
 
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);

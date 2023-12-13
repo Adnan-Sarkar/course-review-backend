@@ -6,6 +6,7 @@ import handleZodError from "../error/handleZodError";
 import handleCastError from "../error/handleCastError";
 import handleDuplicateError from "../error/handleDuplicateError";
 import AppError from "../error/AppError";
+import mongoose from "mongoose";
 
 const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   // create initial error response object
@@ -28,7 +29,14 @@ const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     // mongodb duplicate entry error
     errorResponse = handleDuplicateError(error);
   } else if (error instanceof AppError) {
-    errorResponse = error.generateErrorResponse();
+    // check AppError getting any CastError or not
+    if (error.errorObject && error.errorObject?.name === "CastError") {
+      errorResponse = handleCastError(
+        error.errorObject as mongoose.Error.CastError,
+      );
+    } else {
+      errorResponse = error.generateErrorResponse();
+    }
   } else if (error instanceof Error) {
     errorResponse.errorMessage = error.message;
   }
