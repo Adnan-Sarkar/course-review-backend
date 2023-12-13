@@ -16,7 +16,7 @@ app.get("/", (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: "Welcome to the course review backend API",
-    details: "For API details, visit /api/users",
+    details: "For API details, visit /api/courses",
     documentation:
       "For detailed documentation, visit: https://github.com/Porgramming-Hero-web-course/l2b2a3-course-review-Adnan-Sarkar",
   });
