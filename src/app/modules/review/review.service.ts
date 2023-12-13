@@ -3,7 +3,10 @@ import Review from "./review.model";
 
 // create a review
 const createReviewIntoDB = async (payload: TReview) => {
-  const result = await Review.create(payload);
+  const createdReview = await Review.create(payload);
+
+  const result = createdReview.toObject();
+  delete result.__v;
 
   return result;
 };
