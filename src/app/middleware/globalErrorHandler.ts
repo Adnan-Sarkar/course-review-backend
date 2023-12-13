@@ -29,6 +29,8 @@ const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     errorResponse = handleDuplicateError(error);
   } else if (error instanceof AppError) {
     errorResponse = error.generateErrorResponse();
+  } else if (error instanceof Error) {
+    errorResponse.errorMessage = error.message;
   }
 
   // set the stack message

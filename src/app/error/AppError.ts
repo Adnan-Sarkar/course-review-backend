@@ -15,7 +15,7 @@ class AppError extends Error {
   public generateErrorResponse(): TErrorResponse {
     return {
       success: false,
-      message: this.message,
+      message: "",
       errorMessage: this.message,
       errorDetails: {},
       stack: this.stack || "",

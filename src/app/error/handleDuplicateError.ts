@@ -8,7 +8,7 @@ const handleDuplicateError = (error: any): TErrorResponse => {
 
   return {
     success: false,
-    message: "Duplicate Key Error",
+    message: "Duplicate Entry",
     errorMessage: generateErrorMessage,
     errorDetails: error,
     stack: "",
