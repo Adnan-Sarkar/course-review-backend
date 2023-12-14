@@ -63,16 +63,16 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
 
     if (minPrice && maxPrice) {
       priceQuery = {
-        $gte: minPrice,
-        $lte: maxPrice,
+        $gte: Number(minPrice),
+        $lte: Number(maxPrice),
       };
     } else if (minPrice) {
       priceQuery = {
-        $gte: minPrice,
+        $gte: Number(minPrice),
       };
     } else if (maxPrice) {
       priceQuery = {
-        $lte: maxPrice,
+        $lte: Number(maxPrice),
       };
     }
 
