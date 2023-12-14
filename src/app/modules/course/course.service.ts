@@ -3,7 +3,7 @@ import AppError from "../../error/AppError";
 import Review from "../review/review.model";
 import { TCourse } from "./course.interface";
 import Course from "./course.model";
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, PipelineStage } from "mongoose";
 
 // create a course
 const createCourseIntoDB = async (payload: TCourse) => {
@@ -18,52 +18,31 @@ const createCourseIntoDB = async (payload: TCourse) => {
 
 // get paginated, sorted & filtered courses
 const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
-  // create query
-  let courseQuery = Course.find();
-
-  // apply pagination
+  //  pagination
   const page = Number(query?.page) || 1;
   const limit = Number(query?.limit) || 10;
   const skip = (page - 1) * limit;
 
-  courseQuery = courseQuery.skip(skip).limit(limit);
-
-  // apply sorting
+  // sorting
   const sortProperties = [
     "title",
     "price",
     "startDate",
     "endDate",
     "language",
-    "duration",
+    "durationInWeeks",
   ];
 
-  const sortOrder = (query?.sortOrder as string) === "desc" ? "desc" : "asc";
+  const sortOrder = (query?.sortOrder as string) === "desc" ? -1 : 1;
 
-  const sortByproperties = (query?.sortBy as string)?.split(",");
+  const sortProperty = query?.sortBy as string;
 
-  let allowSort = true;
+  let allowSort = sortProperties.includes(sortProperty);
 
-  // if the sort field is none of sortProperties, then not allow sorting
-  sortByproperties?.forEach((element) => {
-    if (!sortProperties.includes(element)) {
-      allowSort = false;
-    }
-  });
+  // filter object
+  const filterObj: Record<string, unknown> = {};
 
-  if (allowSort && sortByproperties) {
-    // use sort:  [['field', 'asc'], ...]
-
-    const sortArray: [string, "asc" | "desc"][] = sortByproperties.map(
-      (element) => {
-        return [element, sortOrder];
-      },
-    );
-
-    courseQuery = courseQuery.sort(sortArray);
-  }
-
-  // apply minPrice, maxPrice filtering
+  // minPrice, maxPrice filtering
   const minPrice = query?.minPrice;
   const maxPrice = query?.maxPrice;
 
@@ -85,13 +64,8 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
       };
     }
 
-    courseQuery = courseQuery.find({
-      price: priceQuery,
-    });
+    filterObj.price = priceQuery;
   }
-
-  // create filter object
-  const filterObj: Record<string, unknown> = {};
 
   // apply tags filtering
   const tagName = query?.tags as string;
@@ -104,20 +78,27 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
   const startDate = query?.startDate;
   const endDate = query?.endDate;
 
-  if (startDate && endDate && startDate <= endDate) {
+  if (startDate && endDate) {
     filterObj.startDate = {
       $gte: startDate,
     };
-
+    filterObj.endDate = {
+      $lte: endDate,
+    };
+  } else if (startDate) {
+    filterObj.startDate = {
+      $gte: startDate,
+    };
+  } else if (endDate) {
     filterObj.endDate = {
       $lte: endDate,
     };
   }
 
-  // apply language, provider, durationInWeeks, level filtering
+  // language, provider, durationInWeeks, level filtering
   const language = query?.language;
   const provider = query?.provider;
-  const durationInWeeks = query?.duration;
+  const durationInWeeks = query?.durationInWeeks;
   const level = query?.level;
 
   if (language) {
@@ -127,14 +108,47 @@ const getAllCoursesFromDB = async (query: Record<string, unknown>) => {
     filterObj.provider = provider;
   }
   if (durationInWeeks) {
-    filterObj.durationInWeeks = durationInWeeks;
+    filterObj.durationInWeeks = Number(durationInWeeks);
   }
   if (level) {
     filterObj["details.level"] = level;
   }
 
-  courseQuery = courseQuery.find(filterObj);
-  const result = await courseQuery.select("-__v").exec();
+  // create pipeline for aggregation stages
+  const pipeline: PipelineStage[] = [];
+
+  // pipeline statge for filtering - stage 1
+  if (filterObj && Object.keys(filterObj).length) {
+    pipeline.push({
+      $match: filterObj,
+    });
+  }
+
+  // pipeline stage for sorting - stage 2
+  if (allowSort) {
+    pipeline.push({
+      $sort: {
+        [sortProperty]: sortOrder,
+      },
+    });
+  }
+
+  // pipeline stage for pagination - stage 2
+  pipeline.push({
+    $skip: skip,
+  });
+  pipeline.push({
+    $limit: limit,
+  });
+
+  // pipeline stage for project
+  pipeline.push({
+    $project: {
+      __v: 0,
+    },
+  });
+
+  const result = await Course.aggregate(pipeline);
 
   return result;
 };
