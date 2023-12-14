@@ -343,16 +343,23 @@ const updateCourseIntoDB = async (id: string, payload: Partial<TCourse>) => {
         const end = new Date(endDate).getTime();
 
         durationWeeks = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 7));
+
+        modifiedUpdatedData.startDate = startDate;
+        modifiedUpdatedData.endDate = endDate;
       } else if (startDate) {
         const start = new Date(startDate).getTime();
         const end = new Date(currentInfo?.endDate as string).getTime();
 
         durationWeeks = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 7));
+
+        modifiedUpdatedData.startDate = startDate;
       } else if (endDate) {
         const start = new Date(currentInfo?.startDate as string).getTime();
         const end = new Date(endDate).getTime();
 
         durationWeeks = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 7));
+
+        modifiedUpdatedData.endDate = endDate;
       }
 
       // update new durationInWeeks field
