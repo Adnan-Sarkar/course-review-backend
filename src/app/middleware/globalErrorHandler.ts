@@ -7,6 +7,7 @@ import handleCastError from "../error/handleCastError";
 import handleDuplicateError from "../error/handleDuplicateError";
 import AppError from "../error/AppError";
 import mongoose from "mongoose";
+import handleMongodbValidationError from "../error/handleMongodbValidationError";
 
 const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   // create initial error response object
@@ -22,6 +23,8 @@ const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   if (error instanceof ZodError) {
     // zod error handler
     errorResponse = handleZodError(error);
+  } else if (error?.name === "ValidationError") {
+    errorResponse = handleMongodbValidationError(error);
   } else if (error?.name === "CastError") {
     // mongodb cast error
     errorResponse = handleCastError(error);
