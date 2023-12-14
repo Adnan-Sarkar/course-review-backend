@@ -4,9 +4,21 @@ import Review from "../review/review.model";
 import { TCourse } from "./course.interface";
 import Course from "./course.model";
 import mongoose, { Document, PipelineStage } from "mongoose";
+import Category from "../category/category.model";
 
 // create a course
 const createCourseIntoDB = async (payload: TCourse) => {
+  const categoryId = payload.categoryId;
+  // checked category is exists or not;
+  const category = await Category.findById(categoryId);
+
+  if (!category) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      `Category is not found using id: ${categoryId}`,
+    );
+  }
+
   const createdCourse = await Course.create(payload);
 
   const result = createdCourse.toObject();
